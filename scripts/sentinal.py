@@ -2,11 +2,10 @@ import asyncio
 import functools
 import pickle
 import os
+from utils import google_sheet
 
-import gspread
 import requests
 from gspread.utils import numericise_all
-from oauth2client.service_account import ServiceAccountCredentials
 from pyppeteer import launch
 from requests.cookies import RequestsCookieJar
 
@@ -14,7 +13,6 @@ SENTINAL_URL = "https://sentinel.zerodha.com/api"
 ZERODHA_USERID = os.getenv('ZERODHA_USERID')
 ZERODHA_PASSWORD = os.getenv("ZERODHA_PASSWORD")
 ZERODHA_PIN = os.getenv("ZERODHA_PIN")
-CRED_FILE_PATH = os.getenv("CREDENTIAL_JSON_PATH")
 
 
 def pickle_data(data):
@@ -132,16 +130,6 @@ def create_trigger(symbol, price, op, auth_data=None, csrf_token=None):
     return process_response(resp)
 
 
-def init_google_sheet():
-    scope = ['https://spreadsheets.google.com/feeds',
-             'https://www.googleapis.com/auth/drive']
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CRED_FILE_PATH, scope)
-    client = gspread.authorize(creds)
-
-    return client, creds, scope
-
-
 def get_all_records(
         worksheet,
         empty2zero=False,
@@ -152,7 +140,7 @@ def get_all_records(
     idx = head - 1
 
     data = worksheet.get_all_values(value_render_option='UNFORMATTED_VALUE')
-
+    worksheet.append_row()
     if len(data) <= idx:
         return []
 
@@ -176,7 +164,7 @@ def get_all_records(
 
 
 if __name__ == '__main__':
-    client, _, _ = init_google_sheet()
+    client, _, _ = google_sheet.init_google_sheet()
     spread_sheet = client.open('Trade Log')
     ideas_sheet = spread_sheet.worksheet('Ideas')
     ideas = get_all_records(ideas_sheet, head=4, numericise_ignore=['all'])
