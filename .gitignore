@@ -1,5 +1,3 @@
 .venv
-scripts/activate.sh
-scripts/credentials.json
-scripts/Transport Tracker-a87c7e55a396.json
-scripts/auth_data.txt
+auth_data/*
+
