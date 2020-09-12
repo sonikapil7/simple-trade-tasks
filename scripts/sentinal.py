@@ -3,6 +3,8 @@ import functools
 import pickle
 import os
 from utils import google_sheet
+import base64
+import json
 
 import requests
 from gspread.utils import numericise_all
@@ -16,16 +18,19 @@ ZERODHA_PIN = os.getenv("ZERODHA_PIN")
 
 
 def pickle_data(data):
-    with open('auth_data.txt', 'wb') as file:
+    with open('../auth_data/auth_data.txt', 'wb') as file:
         pickle.dump(data, file)
 
 
 def load_data():
     # for reading also binary mode is important
-    data = None
-    with open('auth_data.txt', 'rb') as file:
-        data = pickle.load(file)
-    return data
+    try:
+        data = None
+        with open('../auth_data/auth_data.txt', 'rb') as file:
+            data = pickle.load(file)
+        return data
+    except:
+        return None
 
 
 def load_cookies(data):
@@ -60,7 +65,7 @@ def trim_cookie(c):
 
 async def sentinel_login():
     print("Login with Zerodha")
-    browser = await launch(headless=False)
+    browser = await launch()
     page = await browser.newPage()
     await page.goto(f'{SENTINAL_URL}/user/login/kite')
     await page.type("#userid", ZERODHA_USERID)
@@ -91,16 +96,15 @@ def authenticate(f):
             raise ZeroDivisionError
 
         try:
-            execute_fun()
+            return execute_fun()
         except ZeroDivisionError:
             asyncio.get_event_loop().run_until_complete(sentinel_login())
-            execute_fun()
+            return execute_fun()
 
     return wrapper
 
 
 def process_response(resp):
-    print(f"Response is {resp.status_code} - {resp.text}")
     if resp.ok:
         return resp.json()
     if resp.status_code == 403:
@@ -127,6 +131,26 @@ def create_trigger(symbol, price, op, auth_data=None, csrf_token=None):
                "operator": op, "rule_constant_compare": True}
     # payload = json.dumps(payload)
     resp = requests.post(url, data=payload, headers={'x-csrftoken': csrf_token}, cookies=auth_data)
+    return process_response(resp)
+
+
+@authenticate
+def create_advanced_trigger(symbol, price, margin=0.003, type="Long", auth_data=None, csrf_token=None):
+    url = f"{SENTINAL_URL}/triggers/new/advanced"
+    rule = f"Math_Abs(LastTradedPrice('NSE:{str(symbol)}') - {str(price)}) <= (LastTradedPrice('NSE:{str(symbol)}') * {str(margin)})"
+    print(rule)
+    rule_base64 = base64.b64encode(bytes(rule, 'utf-8'))
+    name = f"{symbol}_{type}_{price}"
+    payload = {
+        "rule_name": name,
+        "rule_string": str(rule_base64, 'utf-8'),
+        "basket_id": None
+    }
+    payload = json.dumps(payload)
+    print(payload)
+    resp = requests.post(url, data=payload,
+                         headers={'x-csrftoken': csrf_token, "content-type": "application/json", 'Content-transfer-encoding': 'base64'},
+                         cookies=auth_data)
     return process_response(resp)
 
 

@@ -22,8 +22,9 @@ SWING_WATCHLIST = "Swing"
 WAITLIST = "Waitlist"
 LONG_TERM_IDEAS = "Long term ideas"
 
+
 def pickle_data(data):
-    with open('auth_data_kite.txt', 'wb') as file:
+    with open('../auth_data/auth_data_kite.txt', 'wb') as file:
         pickle.dump(data, file)
 
 
@@ -31,7 +32,7 @@ def load_data():
     # for reading also binary mode is important
     try:
         data = None
-        with open('auth_data_kite.txt', 'rb') as file:
+        with open('../auth_data/auth_data_kite.txt', 'rb') as file:
             data = pickle.load(file)
         return data
     except:
@@ -140,7 +141,8 @@ def empty_watchlist(watchlist, auth_data=None, csrf_token=None, **kwargs):
     id = watchlist.get('id')
     status = True
     for item in w.get('items', []):
-        resp = requests.delete(f"{KITE_API_URL}/marketwatch/{id}/{item.get('id')}", headers=make_headers(csrf_token, auth_data))
+        resp = requests.delete(f"{KITE_API_URL}/marketwatch/{id}/{item.get('id')}",
+                               headers=make_headers(csrf_token, auth_data))
         if not resp.ok:
             status = False
 
@@ -156,7 +158,8 @@ def add_to_watchlist(watchlist, symbol, auth_data=None, csrf_token=None, **kwarg
         'watch_id': id,
         'weight': 0
     }
-    resp = requests.post(f"{KITE_API_URL}/marketwatch/{id}/items", data=data, headers=make_headers(csrf_token, auth_data))
+    resp = requests.post(f"{KITE_API_URL}/marketwatch/{id}/items", data=data,
+                         headers=make_headers(csrf_token, auth_data))
     if resp.ok:
         return True
     print(resp.text)
@@ -213,6 +216,8 @@ def init_parser():
 
     parser.add_argument('--clear', help="Clear watchlist", action='store_true')
     parser.add_argument('--no-sheet', help="Dont sync to google sheet", action='store_true')
+    parser.add_argument('--no-alert', help="Dont sync to sentinel", action='store_true')
+    parser.add_argument('--no-watch', help="Dont sync to kite watchlist", action='store_true')
     parser.add_argument('--swing', help="If this is to be added in swing watchlist", action='store_true')
     parser.add_argument('--long-term', help="If this is to be added to Long term Ideas", action='store_true')
     parser.add_argument('--waitlist', help="if this is to be added in waitlist", action='store_true')
@@ -241,25 +246,30 @@ if __name__ == '__main__':
         ], raw=False)
         print("Syncing to google sheet done .................")
 
-    print("Getting watchlists from kite...........")
-    resp = get_watchlists()
-    watchlists = resp.get('data')
-    for w in watchlists:
-        if w['name'] == INTRADAY_WATCHLIST:
-            # this is the watch list we have to delete and add to
-            print("Found watchlist..........")
-            if args['clear']:
-                print("Clearing watchlist........")
-                status = empty_watchlist(w)
+    if not args['no_watch']:
+        print("Getting watchlists from kite...........")
+        resp = get_watchlists()
+        watchlists = resp.get('data')
+        for w in watchlists:
+            if w['name'] == INTRADAY_WATCHLIST:
+                # this is the watch list we have to delete and add to
+                print("Found watchlist..........")
+                if args['clear']:
+                    print("Clearing watchlist........")
+                    status = empty_watchlist(w)
+                    if status:
+                        print(f"Watchlist {w['name']} is now empty")
+                    else:
+                        print(f"Watchlist {w['name']} is not successful")
+
+                print(f"Adding to watchlist {w['name']}")
+                status = add_to_watchlist(w, args['s'])
                 if status:
-                    print(f"Watchlist {w['name']} is now empty")
+                    print(f"{args['s']} added successfully")
                 else:
-                    print(f"Watchlist {w['name']} is not successful")
+                    print(f"{args['s']} cannot be added")
 
-            print(f"Adding to watchlist {w['name']}")
-            status = add_to_watchlist(w, args['s'])
-            if status:
-                print(f"{args['s']} added successfully")
-            else:
-                print(f"{args['s']} cannot be added")
-
+    if not args['no_alert']:
+        import sentinal
+        resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'])
+        print(f"Sentinel alert created {resp['rule_name']}")
