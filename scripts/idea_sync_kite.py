@@ -271,5 +271,6 @@ if __name__ == '__main__':
 
     if not args['no_alert']:
         import sentinal
+
         resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'])
         print(f"Sentinel alert created {resp['rule_name']}")

@@ -149,7 +149,8 @@ def create_advanced_trigger(symbol, price, margin=0.003, type="Long", auth_data=
     payload = json.dumps(payload)
     print(payload)
     resp = requests.post(url, data=payload,
-                         headers={'x-csrftoken': csrf_token, "content-type": "application/json", 'Content-transfer-encoding': 'base64'},
+                         headers={'x-csrftoken': csrf_token, "content-type": "application/json",
+                                  'Content-transfer-encoding': 'base64'},
                          cookies=auth_data)
     return process_response(resp)
 
