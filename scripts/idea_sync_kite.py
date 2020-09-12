@@ -270,6 +270,7 @@ if __name__ == '__main__':
                     print(f"{args['s']} cannot be added")
 
     if not args['no_alert']:
+        print("Creating sentinel alert............")
         import sentinal
 
         resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'])
