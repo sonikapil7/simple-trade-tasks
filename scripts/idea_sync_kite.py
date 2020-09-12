@@ -9,7 +9,7 @@ import requests
 from gspread.utils import numericise_all
 from pyppeteer import launch
 from requests.cookies import RequestsCookieJar
-from datetime import datetime
+from datetime import datetime, timedelta
 
 KITE_URL = "https://kite.zerodha.com"
 KITE_API_URL = "https://kite.zerodha.com/api"
@@ -214,6 +214,7 @@ def init_parser():
     parser.add_argument('-e', help='Entry')
     parser.add_argument('-ex', help="Planned exit", default=0)
     parser.add_argument('-sl', help="Stoploss for the trade", default=0)
+    parser.add_argument('-m', help="margin", default=.3)
     return parser
 
 
@@ -242,8 +243,10 @@ if __name__ == '__main__':
         spread_sheet = client.open('Trade Log')
         trade_sheet = spread_sheet.worksheet('Ideas')
         row_num = google_sheet.first_empty_row_based_on_col(trade_sheet, 2)
+        t = datetime.today()
+        nbd = t + timedelta(days=(7 - t.weekday()) if t.weekday() > 4 else 0)  # to calculate the next business day
         trade_sheet.update(f'B{row_num}', [
-            [datetime.today().date().isoformat(), None, args['s'], args['type'], args['e'], args['ex'], args['sl']]
+            [nbd.date().isoformat(), None, args['s'], args['type'], args['e'], args['ex'], args['sl']]
         ], raw=False)
         print("Syncing to google sheet done .................")
 
@@ -274,5 +277,5 @@ if __name__ == '__main__':
         print("Creating sentinel alert............")
         import sentinal
 
-        resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'])
+        resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=float(args['m'])/100)
         print(f"Sentinel alert created {resp['rule_name']}")

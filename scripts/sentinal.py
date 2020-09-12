@@ -138,7 +138,6 @@ def create_trigger(symbol, price, op, auth_data=None, csrf_token=None):
 def create_advanced_trigger(symbol, price, margin=0.003, type="Long", auth_data=None, csrf_token=None):
     url = f"{SENTINAL_URL}/triggers/new/advanced"
     rule = f"Math_Abs(LastTradedPrice('NSE:{str(symbol)}') - {str(price)}) <= (LastTradedPrice('NSE:{str(symbol)}') * {str(margin)})"
-    print(rule)
     rule_base64 = base64.b64encode(bytes(rule, 'utf-8'))
     name = f"{symbol}_{type}_{price}"
     payload = {
@@ -147,7 +146,6 @@ def create_advanced_trigger(symbol, price, margin=0.003, type="Long", auth_data=
         "basket_id": None
     }
     payload = json.dumps(payload)
-    print(payload)
     resp = requests.post(url, data=payload,
                          headers={'x-csrftoken': csrf_token, "content-type": "application/json",
                                   'Content-transfer-encoding': 'base64'},
