@@ -166,18 +166,6 @@ def add_to_watchlist(watchlist, symbol, auth_data=None, csrf_token=None, **kwarg
     return resp.ok
 
 
-@authenticate
-def create_trigger(symbol, price, op, auth_data=None, csrf_token=None):
-    url = f"{KITE_URL}/triggers/new/basic"
-    payload = {"rule_name": f"{symbol}-{to_operator_name(op)}-{price}",
-               "basket_id": None, "constant_value": round(float(price), 2), "attributeA": "LastTradedPrice",
-               "stockA": symbol, "exchangeA": "NSE", "stockB": None, "exchangeB": None, "attributeB": None,
-               "operator": op, "rule_constant_compare": True}
-    # payload = json.dumps(payload)
-    resp = requests.post(url, data=payload, headers={'x-csrftoken': csrf_token}, cookies=auth_data)
-    return process_response(resp)
-
-
 def get_all_records(
         worksheet,
         empty2zero=False,
@@ -229,6 +217,19 @@ def init_parser():
     return parser
 
 
+def watchlist_name(args):
+    name = None
+    if args['waitlist']:
+        name = WAITLIST
+    if args['long_term']:
+        name = LONG_TERM_IDEAS
+    if args['swing']:
+        name = SWING_WATCHLIST
+    if not name:
+        name = INTRADAY_WATCHLIST
+    return name
+
+
 if __name__ == '__main__':
     parser = init_parser()
     args = vars(parser.parse_args())
@@ -251,9 +252,9 @@ if __name__ == '__main__':
         resp = get_watchlists()
         watchlists = resp.get('data')
         for w in watchlists:
-            if w['name'] == INTRADAY_WATCHLIST:
+            if w['name'] == watchlist_name(args):
                 # this is the watch list we have to delete and add to
-                print("Found watchlist..........")
+                print(f"Found watchlist {w['name']}..........")
                 if args['clear']:
                     print("Clearing watchlist........")
                     status = empty_watchlist(w)
