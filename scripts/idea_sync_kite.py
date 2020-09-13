@@ -238,28 +238,31 @@ if __name__ == '__main__':
         raise Exception("Symbol not specified")
 
     if not args['no_sheet']:
-        print("Syncing to google sheet............")
+        print("Syncing to google sheet")
+        print("--------------------------------------------")
         client, _, _ = google_sheet.init_google_sheet()
         spread_sheet = client.open('Trade Log')
         trade_sheet = spread_sheet.worksheet('Ideas')
         row_num = google_sheet.first_empty_row_based_on_col(trade_sheet, 2)
         t = datetime.today()
-        nbd = t + timedelta(days=(7 - t.weekday()) if t.weekday() > 4 else 0)  # to calculate the next business day
+        nbd = t + timedelta(days=((7 - t.weekday()) if t.weekday() > 4 else 0))  # to calculate the next business day
         trade_sheet.update(f'B{row_num}', [
             [nbd.date().isoformat(), None, args['s'], args['type'], args['e'], args['ex'], args['sl']]
         ], raw=False)
-        print("Syncing to google sheet done .................")
+        print("Syncing to google sheet done")
+        print("============================================")
 
     if not args['no_watch']:
-        print("Getting watchlists from kite...........")
+        print("Adding to watchlist")
+        print("--------------------------------------------")
         resp = get_watchlists()
         watchlists = resp.get('data')
         for w in watchlists:
             if w['name'] == watchlist_name(args):
                 # this is the watch list we have to delete and add to
-                print(f"Found watchlist {w['name']}..........")
+                print(f"Found watchlist {w['name']}")
                 if args['clear']:
-                    print("Clearing watchlist........")
+                    print(f"Clearing Watchlist {w['name']}")
                     status = empty_watchlist(w)
                     if status:
                         print(f"Watchlist {w['name']} is now empty")
@@ -272,10 +275,24 @@ if __name__ == '__main__':
                     print(f"{args['s']} added successfully")
                 else:
                     print(f"{args['s']} cannot be added")
+        print("============================================")
 
     if not args['no_alert']:
-        print("Creating sentinel alert............")
+        print("Creating sentinel alert")
+        print("--------------------------------------------")
         import sentinal
 
-        resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=float(args['m'])/100)
-        print(f"Sentinel alert created {resp['rule_name']}")
+        try:
+            resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=float(args['m'])/100)
+            print(f"Sentinel alert created {resp['rule_name']}")
+        except:
+            print("Error creating NEAR alert")
+
+        try:
+            resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=0)
+            print(f"Sentinel alert created for exact price {resp['rule_name']}")
+        except:
+            print("Error creating EQUAL alert")
+
+        print("============================================")
+
