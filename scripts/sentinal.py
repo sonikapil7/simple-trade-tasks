@@ -88,7 +88,6 @@ def authenticate(f):
         def execute_fun():
             auth_data = load_data()
             if auth_data:
-                print("Trying with existing login information")
                 jar, csrf_token = load_cookies(auth_data)
                 resp = f(*args, auth_data=jar, csrf_token=csrf_token, **kwargs)
                 return resp
