@@ -281,12 +281,13 @@ if __name__ == '__main__':
         print("Creating sentinel alert")
         print("--------------------------------------------")
         import sentinal
-
-        try:
-            resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=float(args['m'])/100)
-            print(f"Sentinel alert created {resp['rule_name']}")
-        except:
-            print("Error creating NEAR alert")
+        if float(args['m']) > 0:
+            try:
+                print("Creating NEAR term alert")
+                resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=float(args['m'])/100)
+                print(f"Sentinel alert created {resp['rule_name']}")
+            except:
+                print("Error creating NEAR alert")
 
         try:
             resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=0)
