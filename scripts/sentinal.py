@@ -133,13 +133,13 @@ def create_trigger(symbol, price, op, auth_data=None, csrf_token=None):
 
 
 @authenticate
-def create_advanced_trigger(symbol, price, margin=0.003, type="Long", auth_data=None, csrf_token=None):
+def create_advanced_trigger(symbol, price, margin=0.003, type="Long", stoploss=None, position_size=None, auth_data=None, csrf_token=None):
     url = f"{SENTINAL_URL}/triggers/new/advanced"
     if margin > 0:
         rule = f"Math_Abs(LastTradedPrice('NSE:{str(symbol)}') - {str(price)}) <= (LastTradedPrice('NSE:{str(symbol)}') * {str(margin)})"
-        name = f"{symbol}_{type}_{price}_NEAR_ALERT"
+        name = f"NE_{symbol}_{type}_{price}_{stoploss or ''}_{position_size or ''}"
     else:
-        name = f"{symbol}_{type}_{price}_EQUAL_ALERT"
+        name = f"EQ_{symbol}_{type}_{price}_{stoploss or ''}_{position_size or ''}"
         rule = f"LastTradedPrice('NSE:{str(symbol)}') == {str(price)}"
     rule_base64 = base64.b64encode(bytes(rule, 'utf-8'))
     payload = {

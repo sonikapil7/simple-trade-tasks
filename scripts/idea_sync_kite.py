@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import functools
+import math
 import pickle
 import os
 from utils import google_sheet
@@ -215,6 +216,7 @@ def init_parser():
     parser.add_argument('-ex', help="Planned exit", default=0)
     parser.add_argument('-sl', help="Stoploss for the trade", default=0)
     parser.add_argument('-m', help="margin", default=.3)
+    parser.add_argument('-mloss', help="Max Loss", default=0)
     return parser
 
 
@@ -236,6 +238,19 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
     if not args['s']:
         raise Exception("Symbol not specified")
+
+    args['s'] = args['s'].upper()
+
+    if args['sl'] and float(args['sl']) > float(args['e']):
+        args['type'] = 'Short'
+    elif args['sl'] and float(args['sl']) < float(args['e']):
+        args['type'] = 'Long'
+    max_loss = float(args['mloss'])
+    if max_loss <= 0:
+        pos_size = None
+    else:
+        loss_per_share = abs(float(args['e']) - float(args['sl']))
+        pos_size = math.floor(max_loss/loss_per_share)
 
     if not args['no_sheet']:
         print("Syncing to google sheet")
@@ -284,13 +299,16 @@ if __name__ == '__main__':
         if float(args['m']) > 0:
             try:
                 print("Creating NEAR term alert")
-                resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=float(args['m'])/100)
+                resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'],
+                                                        margin=float(args['m'])/100, stoploss=args['sl'],
+                                                        position_size=pos_size)
                 print(f"Sentinel alert created {resp['rule_name']}")
             except:
                 print("Error creating NEAR alert")
 
         try:
-            resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'], margin=0)
+            resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'],
+                                                    margin=0, stoploss=args['sl'], position_size=pos_size)
             print(f"Sentinel alert created for exact price {resp['rule_name']}")
         except:
             print("Error creating EQUAL alert")
