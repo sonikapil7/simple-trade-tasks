@@ -105,6 +105,10 @@ def authenticate(f):
 def process_response(resp):
     if resp.ok:
         return resp.json()
+    else:
+        print(resp.text)
+        print(resp.status_code)
+
     if resp.status_code == 403:
         raise ZeroDivisionError
 
@@ -113,6 +117,28 @@ def process_response(resp):
 def get_triggers(auth_data=None, **kwargs):
     resp = requests.get(f"{SENTINAL_URL}/triggers/all", cookies=auth_data)
     return process_response(resp)
+
+
+@authenticate
+def delete_trigger(hash_id, auth_data=None, csrf_token=None, **kwargs):
+    resp = requests.delete(f"{SENTINAL_URL}/triggers/detail/{hash_id}", headers={'x-csrftoken': csrf_token},
+                           cookies=auth_data)
+    return resp.ok
+
+
+def clear_triggers(all=False, auth_data=None, **kwargs):
+    try:
+        all_triggers = get_triggers()
+        for trigger in all_triggers:
+            if all or not trigger['is_active']:
+                try:
+                    delete_trigger(trigger['hash_id'])
+                except:
+                    pass
+        return None
+    except Exception as e:
+        raise e
+        pass
 
 
 def to_operator_name(op):
@@ -140,7 +166,7 @@ def create_advanced_trigger(symbol, price, margin=0.003, type="Long", stoploss=N
         name = f"NE_{symbol}_{type}_{price}_{stoploss or ''}_{position_size or ''}"
     else:
         name = f"EQ_{symbol}_{type}_{price}_{stoploss or ''}_{position_size or ''}"
-        rule = f"LastTradedPrice('NSE:{str(symbol)}') == {str(price)}"
+        rule = f"HighPrice('NSE:{str(symbol)}') >= {str(price)} && LowPrice('NSE:{str(symbol)}') <= {str(price)}"
     rule_base64 = base64.b64encode(bytes(rule, 'utf-8'))
     payload = {
         "rule_name": name,

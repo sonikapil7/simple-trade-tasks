@@ -110,6 +110,10 @@ def authenticate(f):
 def process_response(resp):
     if resp.ok:
         return resp.json()
+    else:
+        print(resp.text)
+        print(resp.status_code)
+
     if resp.status_code == 403:
         raise ZeroDivisionError
 
@@ -204,6 +208,8 @@ def init_parser():
     parser = argparse.ArgumentParser(description='Add to Kite watch list and Ideas log sheet in google.')
 
     parser.add_argument('--clear', help="Clear watchlist", action='store_true')
+    parser.add_argument('--clear-triggers', help="Clear triggers", action='store_true')
+    parser.add_argument('--clear-triggers-all', help="Clear all triggers", action='store_true')
     parser.add_argument('--no-sheet', help="Dont sync to google sheet", action='store_true')
     parser.add_argument('--no-alert', help="Dont sync to sentinel", action='store_true')
     parser.add_argument('--no-watch', help="Dont sync to kite watchlist", action='store_true')
@@ -293,9 +299,14 @@ if __name__ == '__main__':
         print("============================================")
 
     if not args['no_alert']:
+        import sentinal
+        all_clear = args['clear_triggers_all']
+        if args['clear_triggers'] or all_clear:
+            print(f'Clearing Triggers {all_clear}')
+            sentinal.clear_triggers(all=all_clear)
         print("Creating sentinel alert")
         print("--------------------------------------------")
-        import sentinal
+
         if float(args['m']) > 0:
             try:
                 print("Creating NEAR term alert")
