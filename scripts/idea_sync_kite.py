@@ -301,6 +301,7 @@ if __name__ == '__main__':
                     print(f"{args['s']} cannot be added")
         print("============================================")
 
+    rule_name = 'NA'
     if not args['no_alert']:
         import sentinal
         all_clear = args['clear_triggers_all']
@@ -313,8 +314,17 @@ if __name__ == '__main__':
             resp = sentinal.create_advanced_trigger(args['s'], (e1, e2), type=args['type'],
                                                     stoploss=args['sl'], position_size=pos_size)
             print(f"Sentinel alert created {resp['rule_name']}")
+            rule_name = resp['rule_name']
         except Exception as e:
             print("Error creating EQUAL alert")
 
         print("============================================")
+
+    print("***********************************************")
+    print(f"Symbol\t\t\t{args['s']}")
+    print(f"Position size\t\t{pos_size}")
+    print(f"Entry Price\t\t{e1} - {e2}")
+    print(f"Stop Loss\t\t{args['sl']}")
+    print(f"Rule name\t\t{rule_name}")
+    print("***********************************************")
 
