@@ -247,15 +247,18 @@ if __name__ == '__main__':
 
     args['s'] = args['s'].upper()
 
-    if args['sl'] and float(args['sl']) > float(args['e']):
+    e1 = float(args['e'].split('-')[0])
+    e2 = float(args['e'].split('-')[1])
+
+    if args['sl'] and float(args['sl']) > e1:
         args['type'] = 'Short'
-    elif args['sl'] and float(args['sl']) < float(args['e']):
+    elif args['sl'] and float(args['sl']) < e1:
         args['type'] = 'Long'
     max_loss = float(args['mloss'])
     if max_loss <= 0:
         pos_size = None
     else:
-        loss_per_share = abs(float(args['e']) - float(args['sl']))
+        loss_per_share = abs(e1 - float(args['sl']))
         pos_size = math.floor(max_loss/loss_per_share)
 
     if not args['no_sheet']:
@@ -268,7 +271,7 @@ if __name__ == '__main__':
         t = datetime.today()
         nbd = t + timedelta(days=((7 - t.weekday()) if t.weekday() > 4 else 0))  # to calculate the next business day
         trade_sheet.update(f'B{row_num}', [
-            [nbd.date().isoformat(), None, args['s'], args['type'], args['e'], args['ex'], args['sl']]
+            [nbd.date().isoformat(), None, args['s'], args['type'], e1, args['ex'], args['sl']]
         ], raw=False)
         print("Syncing to google sheet done")
         print("============================================")
@@ -306,22 +309,11 @@ if __name__ == '__main__':
             sentinal.clear_triggers(all=all_clear)
         print("Creating sentinel alert")
         print("--------------------------------------------")
-
-        if float(args['m']) > 0:
-            try:
-                print("Creating NEAR term alert")
-                resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'],
-                                                        margin=float(args['m'])/100, stoploss=args['sl'],
-                                                        position_size=pos_size)
-                print(f"Sentinel alert created {resp['rule_name']}")
-            except:
-                print("Error creating NEAR alert")
-
         try:
-            resp = sentinal.create_advanced_trigger(args['s'], args['e'], type=args['type'],
-                                                    margin=0, stoploss=args['sl'], position_size=pos_size)
-            print(f"Sentinel alert created for exact price {resp['rule_name']}")
-        except:
+            resp = sentinal.create_advanced_trigger(args['s'], (e1, e2), type=args['type'],
+                                                    stoploss=args['sl'], position_size=pos_size)
+            print(f"Sentinel alert created {resp['rule_name']}")
+        except Exception as e:
             print("Error creating EQUAL alert")
 
         print("============================================")
