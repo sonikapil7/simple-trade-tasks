@@ -1,0 +1,27 @@
+//@version=4
+// This script allows you to plot 3 Moving averages which saves you from the number of indicator limit 
+// in free version.
+// You can add more in similar fashion if you need more,
+study(title="Kaps EMA Bundle", shorttitle="KEMAB", overlay=true, resolution="")
+len1 = input(20, minval=1, title="Length 1")
+len2 = input(50, minval=1, title="Length 2")
+len3 = input(200, minval=1, title="Length 3")
+show1 = input(true, title="Show EMA 1")
+show2 = input(true, title="Show EMA 2")
+show3 = input(true, title="Show EMA 3")
+
+
+src = input(close, title="Source")
+offset = input(title="Offset", type=input.integer, defval=0, minval=-500, maxval=500)
+
+out1 = if show1
+    ema(src, len1)
+out2 = if show2
+    ema(src, len2)
+out3 = if show3
+    ema(src, len3)
+    
+plot(out1, title="EMA", color=color.orange, offset=offset)
+plot(out2, title="EMA", color=color.blue, offset=offset)
+plot(out3, title="EMA", color=color.black, offset=offset)
+

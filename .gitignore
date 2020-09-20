@@ -1,3 +1,5 @@
 .venv
 auth_data/*
-
+**/*.pyc
+.idea/
+.DS_Store/
