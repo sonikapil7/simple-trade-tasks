@@ -177,6 +177,23 @@ def create_advanced_trigger(symbol, price, type="Long", stoploss=None, position_
     return process_response(resp)
 
 
+@authenticate
+def create_advanced_trigger_with_rule(rule, name=None, auth_data=None, csrf_token=None):
+    url = f"{SENTINAL_URL}/triggers/new/advanced"
+    rule_base64 = base64.b64encode(bytes(rule, 'utf-8'))
+    payload = {
+        "rule_name": name,
+        "rule_string": str(rule_base64, 'utf-8'),
+        "basket_id": None
+    }
+    payload = json.dumps(payload)
+    resp = requests.post(url, data=payload,
+                         headers={'x-csrftoken': csrf_token, "content-type": "application/json",
+                                  'Content-transfer-encoding': 'base64'},
+                         cookies=auth_data)
+    return process_response(resp)
+
+
 def get_all_records(
         worksheet,
         empty2zero=False,
